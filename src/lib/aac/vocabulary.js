@@ -1,0 +1,122 @@
+// Starter core-word board. Categories follow the Fitzgerald Key color
+// convention widely used in AAC (Unity, LAMP, PODD, etc.) so the color itself
+// carries meaning for the learner, not just the label: yellow = pronouns,
+// green = verbs, blue = descriptors, orange = nouns, pink = social,
+// purple = questions, red = negation.
+export const CATEGORIES = [
+  {
+    id: 'social',
+    label: 'Social',
+    color: 'pink',
+    words: [
+      { id: 'hi', label: 'hi', emoji: '👋' },
+      { id: 'bye', label: 'bye', emoji: '👋' },
+      { id: 'please', label: 'please', emoji: '🙏' },
+      { id: 'thank-you', label: 'thank you', emoji: '🙏' },
+      { id: 'sorry', label: 'sorry', emoji: '😔' },
+      { id: 'yes', label: 'yes', emoji: '✅' },
+      { id: 'no', label: 'no', emoji: '❌', category: 'negation' },
+      { id: 'help', label: 'help', emoji: '🆘' },
+    ],
+  },
+  {
+    id: 'pronouns',
+    label: 'Pronouns',
+    color: 'yellow',
+    words: [
+      { id: 'i', label: 'I', emoji: '🧑' },
+      { id: 'you', label: 'you', emoji: '👉' },
+      { id: 'we', label: 'we', emoji: '🧑‍🤝‍🧑' },
+      { id: 'they', label: 'they', emoji: '👥' },
+      { id: 'it', label: 'it', emoji: '🔹' },
+      { id: 'he', label: 'he', emoji: '👦' },
+      { id: 'she', label: 'she', emoji: '👧' },
+      { id: 'my', label: 'my', emoji: '🫱' },
+    ],
+  },
+  {
+    id: 'verbs',
+    label: 'Actions',
+    color: 'green',
+    words: [
+      { id: 'want', label: 'want', emoji: '🙋' },
+      { id: 'go', label: 'go', emoji: '🚶' },
+      { id: 'stop', label: 'stop', emoji: '✋' },
+      { id: 'like', label: 'like', emoji: '👍' },
+      { id: 'eat', label: 'eat', emoji: '🍽️' },
+      { id: 'drink', label: 'drink', emoji: '🥤' },
+      { id: 'play', label: 'play', emoji: '🎲' },
+      { id: 'look', label: 'look', emoji: '👀' },
+      { id: 'give', label: 'give', emoji: '🤲' },
+      { id: 'make', label: 'make', emoji: '🛠️' },
+      { id: 'feel', label: 'feel', emoji: '💭' },
+      { id: 'more', label: 'more', emoji: '➕' },
+    ],
+  },
+  {
+    id: 'descriptors',
+    label: 'Describing',
+    color: 'blue',
+    words: [
+      { id: 'big', label: 'big', emoji: '🐘' },
+      { id: 'little', label: 'little', emoji: '🐜' },
+      { id: 'hot', label: 'hot', emoji: '🔥' },
+      { id: 'cold', label: 'cold', emoji: '❄️' },
+      { id: 'good', label: 'good', emoji: '😊' },
+      { id: 'bad', label: 'bad', emoji: '😣' },
+      { id: 'happy', label: 'happy', emoji: '😄' },
+      { id: 'sad', label: 'sad', emoji: '😢' },
+      { id: 'tired', label: 'tired', emoji: '😴' },
+      { id: 'all-done', label: 'all done', emoji: '🏁' },
+    ],
+  },
+  {
+    id: 'nouns',
+    label: 'Things',
+    color: 'orange',
+    words: [
+      { id: 'food', label: 'food', emoji: '🍎' },
+      { id: 'water', label: 'water', emoji: '💧' },
+      { id: 'bathroom', label: 'bathroom', emoji: '🚻' },
+      { id: 'home', label: 'home', emoji: '🏠' },
+      { id: 'school', label: 'school', emoji: '🏫' },
+      { id: 'book', label: 'book', emoji: '📖' },
+      { id: 'ball', label: 'ball', emoji: '⚽' },
+      { id: 'music', label: 'music', emoji: '🎵' },
+    ],
+  },
+  {
+    id: 'questions',
+    label: 'Questions',
+    color: 'purple',
+    words: [
+      { id: 'what', label: 'what', emoji: '❓' },
+      { id: 'where', label: 'where', emoji: '📍' },
+      { id: 'who', label: 'who', emoji: '🙋‍♂️' },
+      { id: 'when', label: 'when', emoji: '⏰' },
+      { id: 'why', label: 'why', emoji: '🤔' },
+      { id: 'how', label: 'how', emoji: '🛠️' },
+    ],
+  },
+];
+
+export const CATEGORY_COLOR_CLASSES = {
+  pink: 'bg-pink-100 hover:bg-pink-200 active:bg-pink-300 text-pink-950 border-pink-300',
+  yellow: 'bg-yellow-100 hover:bg-yellow-200 active:bg-yellow-300 text-yellow-950 border-yellow-300',
+  green: 'bg-green-100 hover:bg-green-200 active:bg-green-300 text-green-950 border-green-300',
+  blue: 'bg-blue-100 hover:bg-blue-200 active:bg-blue-300 text-blue-950 border-blue-300',
+  orange: 'bg-orange-100 hover:bg-orange-200 active:bg-orange-300 text-orange-950 border-orange-300',
+  purple: 'bg-purple-100 hover:bg-purple-200 active:bg-purple-300 text-purple-950 border-purple-300',
+  red: 'bg-red-100 hover:bg-red-200 active:bg-red-300 text-red-950 border-red-300',
+};
+
+export const VOICES = [
+  { id: 'Bella', label: 'Bella' },
+  { id: 'Jasper', label: 'Jasper' },
+  { id: 'Luna', label: 'Luna' },
+  { id: 'Bruno', label: 'Bruno' },
+  { id: 'Rosie', label: 'Rosie' },
+  { id: 'Hugo', label: 'Hugo' },
+  { id: 'Kiki', label: 'Kiki' },
+  { id: 'Leo', label: 'Leo' },
+];

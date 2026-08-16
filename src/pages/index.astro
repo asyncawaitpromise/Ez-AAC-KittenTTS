@@ -1,11 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Counter from '../components/Counter';
+import AacBoard from '../components/aac/AacBoard';
 ---
 
-<Layout title="Astro CF Pages" emoji="🚀">
-  <main class="p-6">
-    <h1 class="text-2xl font-bold mb-4">Astro + CF Pages</h1>
-    <Counter client:load />
-  </main>
+<Layout
+  title="Ez AAC · KittenTTS"
+  desc="Offline AAC communication board powered by on-device KittenTTS speech synthesis."
+  emoji="🐱"
+>
+  <AacBoard client:load />
 </Layout>
