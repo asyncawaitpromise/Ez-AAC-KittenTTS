@@ -1,0 +1,41 @@
+name: Preview
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+concurrency:
+  group: "preview-${{ github.event.pull_request.number }}"
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    if: contains(github.event.pull_request.labels.*.name, 'preview')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Deploy preview to Cloudflare Workers
+        run: ./scripts/deploy.sh --name=${{ secrets.CF_WORKER_NAME }}-pr-${{ github.event.pull_request.number }}
+        env:
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}

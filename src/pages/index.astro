@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Counter from '../components/Counter';
+---
+
+<Layout title="Astro CF Pages" emoji="🚀">
+  <main class="p-6">
+    <h1 class="text-2xl font-bold mb-4">Astro + CF Pages</h1>
+    <Counter client:load />
+  </main>
+</Layout>
