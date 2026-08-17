@@ -67,6 +67,13 @@ const AacBoard = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mode, setMode] = useState('board');
 
+  // Auto-start the engine on mount — if the model is already cached this
+  // resolves almost instantly, so there's no reason to make the user tap
+  // "Load speech engine" every time they open the app.
+  useEffect(() => {
+    load();
+  }, [load]);
+
   // Jump to the new board's first goal whenever the active board changes
   // (switching boards, or the very first board load).
   useEffect(() => {
