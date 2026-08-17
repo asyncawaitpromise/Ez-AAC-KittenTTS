@@ -32,7 +32,9 @@ export function loadPhrases() {
 
 export function savePhrases(phrases) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+  try {
+    window.localStorage.setItem(PHRASES_KEY, JSON.stringify(phrases));
+  } catch {}
 }
 
 export function addPhrase(phrases, text) {

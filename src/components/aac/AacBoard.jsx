@@ -1,20 +1,26 @@
-import { useEffect, useState } from 'react';
-import { Settings, Download, LayoutGrid, Keyboard, MessagesSquare } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Settings, Download, LayoutGrid, Keyboard, MessagesSquare, Search } from 'lucide-react';
 import { useTts } from '../../lib/tts/useTts';
 import { useSettings } from '../../lib/aac/useSettings';
 import { useBoards } from '../../lib/aac/useBoards';
 import { usePhrases } from '../../lib/aac/usePhrases';
+import { useRecents } from '../../lib/aac/useRecents';
+import { usePrediction } from '../../lib/aac/usePrediction';
 import { CATEGORY_COLOR_CLASSES } from '../../lib/aac/vocabulary';
 import Tile from './Tile';
 import SentenceBar from './SentenceBar';
 import SettingsPanel from './SettingsPanel';
 import KeyboardView from './KeyboardView';
 import PhrasesView from './PhrasesView';
+import SearchView from './SearchView';
+import PredictionBar from './PredictionBar';
+import RecentsBar from './RecentsBar';
 
 const MODES = [
   { id: 'board', label: 'Board', icon: LayoutGrid },
   { id: 'keyboard', label: 'Type', icon: Keyboard },
   { id: 'phrases', label: 'Phrases', icon: MessagesSquare },
+  { id: 'search', label: 'Search', icon: Search },
 ];
 
 function formatBytes(n) {
@@ -57,10 +63,11 @@ const LoadGate = ({ status, progress, error, onLoad }) => (
 
 const AacBoard = () => {
   const { status, progress, error, synthesizingVoice, speakingVoice, load, speak } = useTts();
-  const { voice, speed, setSpeed } = useSettings();
+  const { voice, speed, setSpeed, speakOnTap, setSpeakOnTap } = useSettings();
   const boardsApi = useBoards();
   const { activeBoard } = boardsApi;
   const { phrases, addPhrase, removePhrase } = usePhrases();
+  const { recents, addRecent } = useRecents();
 
   const [sentence, setSentence] = useState([]);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
@@ -80,22 +87,56 @@ const AacBoard = () => {
     setActiveCategoryId(activeBoard.categories[0]?.id ?? null);
   }, [activeBoard.id]);
 
+  const candidateWords = useMemo(
+    () => activeBoard.categories.flatMap((c) => c.words.map((w) => w.label)),
+    [activeBoard]
+  );
+
+  const { suggestions, record } = usePrediction({ phrases, candidateWords, sentence });
+
+  // KittenTTS reads tone/prosody across a whole sentence, so speech only ever
+  // happens once on the full sentence (via the Speak button below) — never
+  // per-chip. Board tiles, typed text, and saved phrases all funnel into the
+  // same sentence array so they can be freely combined before speaking. The
+  // "Speak on tap" setting opts out of that and utters each tile immediately.
+  const addChip = useCallback(
+    ({ id, label, source = 'word' }) => {
+      setSentence((s) => [...s, { id, label }]);
+      addRecent({ label, source });
+    },
+    [addRecent]
+  );
+
+  const addWord = useCallback(
+    (word) => {
+      addChip({ id: word.id, label: word.label, source: 'word' });
+      if (speakOnTap) speak(word.label, { voice, speed });
+    },
+    [addChip, speakOnTap, speak, voice, speed]
+  );
+  const addText = useCallback((text) => addChip({ id: `typed-${Date.now()}`, label: text, source: 'text' }), [addChip]);
+  const addPhraseToSentence = useCallback(
+    (phrase) => addChip({ id: phrase.id, label: phrase.text, source: 'phrase' }),
+    [addChip]
+  );
+  const addLabel = useCallback(
+    (label) => addChip({ id: `word-${Date.now()}-${label}`, label, source: 'word' }),
+    [addChip]
+  );
+  const pickRecent = useCallback(
+    (item) => addChip({ id: item.id, label: item.label, source: item.source || 'word' }),
+    [addChip]
+  );
+
   if (status !== 'ready') {
     return <LoadGate status={status} progress={progress} error={error} onLoad={load} />;
   }
 
   const category = activeBoard.categories.find((c) => c.id === activeCategoryId);
 
-  // KittenTTS reads tone/prosody across a whole sentence, so speech only ever
-  // happens once on the full sentence (via the Speak button below) — never
-  // per-chip. Board tiles, typed text, and saved phrases all funnel into the
-  // same sentence array so they can be freely combined before speaking.
-  const addWord = (word) => setSentence((s) => [...s, word]);
-  const addText = (text) => setSentence((s) => [...s, { id: `typed-${Date.now()}`, label: text }]);
-  const addPhraseToSentence = (phrase) => setSentence((s) => [...s, { id: phrase.id, label: phrase.text }]);
-
   const speakSentence = () => {
     const text = sentence.map((w) => w.label).join(' ');
+    record(text);
     speak(text, { voice, speed });
   };
 
@@ -137,6 +178,8 @@ const AacBoard = () => {
 
       {mode === 'board' && (
         <>
+          <PredictionBar suggestions={suggestions} onPick={addLabel} />
+
           <div className="flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="Word categories">
             {activeBoard.categories.map((c) => (
               <button
@@ -153,6 +196,8 @@ const AacBoard = () => {
               </button>
             ))}
           </div>
+
+          <RecentsBar recents={recents} onPick={pickRecent} />
 
           <div className="grid flex-1 content-start grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
             {!category && (
@@ -178,12 +223,24 @@ const AacBoard = () => {
         />
       )}
 
+      {mode === 'search' && (
+        <SearchView
+          boardsApi={boardsApi}
+          phrases={phrases}
+          addPhrase={addPhrase}
+          onUseWord={addLabel}
+          onUsePhrase={addPhraseToSentence}
+        />
+      )}
+
       <SettingsPanel
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         voice={voice}
         speed={speed}
         onSpeedChange={setSpeed}
+        speakOnTap={speakOnTap}
+        onSpeakOnTapChange={setSpeakOnTap}
         boardsApi={boardsApi}
       />
     </div>

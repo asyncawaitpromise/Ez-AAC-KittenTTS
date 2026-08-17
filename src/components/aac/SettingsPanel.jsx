@@ -1,9 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, ChevronRight } from 'lucide-react';
 import BoardEditorView from './BoardEditorView';
 
-const SettingsPanel = ({ open, onClose, voice, speed, onSpeedChange, boardsApi }) => {
+const SettingsPanel = ({ open, onClose, voice, speed, onSpeedChange, speakOnTap, onSpeakOnTapChange, boardsApi }) => {
   const [view, setView] = useState('root');
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setView('root');
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
 
   if (!open) return null;
 
@@ -13,8 +25,18 @@ const SettingsPanel = ({ open, onClose, voice, speed, onSpeedChange, boardsApi }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-      <div className="w-full max-w-sm rounded-t-2xl bg-base-100 p-4 sm:rounded-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) close();
+      }}
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Settings"
+        className="w-full max-w-sm rounded-t-2xl bg-base-100 p-4 sm:rounded-2xl"
+      >
         {view === 'root' ? (
           <>
             <div className="mb-3 flex items-center justify-between">
@@ -42,6 +64,16 @@ const SettingsPanel = ({ open, onClose, voice, speed, onSpeedChange, boardsApi }
                 value={speed}
                 onChange={(e) => onSpeedChange(parseFloat(e.target.value))}
                 className="range range-primary"
+              />
+            </label>
+
+            <label className="mb-3 flex items-center justify-between rounded-xl border-2 border-base-300 p-3">
+              <span className="text-sm font-medium">Speak each tile on tap</span>
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={speakOnTap}
+                onChange={(e) => onSpeakOnTapChange(e.target.checked)}
               />
             </label>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Download, Plus, Trash2, Upload } from 'lucide-react';
 import { CATEGORY_COLOR_CLASSES } from '../../lib/aac/vocabulary';
+import { exportToObf, importObf } from '../../lib/aac/obf';
 
 const COLOR_KEYS = Object.keys(CATEGORY_COLOR_CLASSES);
 
@@ -82,11 +83,13 @@ const BoardEditorView = ({ boardsApi, onBack }) => {
     removeCategory,
     addWord,
     removeWord,
+    replaceBoards,
   } = boardsApi;
 
   const [newBoardName, setNewBoardName] = useState('');
   const [newCategoryLabel, setNewCategoryLabel] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState(COLOR_KEYS[0]);
+  const [importError, setImportError] = useState('');
 
   const submitNewBoard = (e) => {
     e.preventDefault();
@@ -100,6 +103,31 @@ const BoardEditorView = ({ boardsApi, onBack }) => {
     if (!newCategoryLabel.trim()) return;
     addCategory(activeBoard.id, { label: newCategoryLabel.trim(), color: newCategoryColor });
     setNewCategoryLabel('');
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(exportToObf(activeBoard), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeBoard.name.replace(/\s+/g, '-').toLowerCase() || 'board'}.obf.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const board = importObf(text);
+      replaceBoards([...boards, board]);
+      setActiveBoardId(board.id);
+      setImportError('');
+    } catch (err) {
+      setImportError(err?.message || 'Could not import that file');
+    }
+    e.target.value = '';
   };
 
   return (
@@ -136,6 +164,25 @@ const BoardEditorView = ({ boardsApi, onBack }) => {
           </button>
         </div>
       </label>
+
+      <div className="rounded-xl border-2 border-base-300 p-3">
+        <span className="mb-2 block font-bold">Export / Import</span>
+        <div className="flex gap-2">
+          <button type="button" onClick={handleExport} className="btn btn-outline gap-1">
+            <Download size={16} /> Export
+          </button>
+          <label className="btn btn-outline gap-1">
+            <Upload size={16} /> Import
+            <input
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={handleImport}
+            />
+          </label>
+        </div>
+        {importError && <p className="text-error text-sm mt-2">{importError}</p>}
+      </div>
 
       <label className="block">
         <span className="mb-1 block text-sm font-medium">Board name</span>

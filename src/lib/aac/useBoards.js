@@ -51,6 +51,7 @@ export function useBoards() {
     (boardId, categoryId, wordId) => setBoards((bs) => store.removeWord(bs, boardId, categoryId, wordId)),
     []
   );
+  const replaceBoards = useCallback((next) => setBoards(next), []);
 
   return {
     boards,
@@ -64,5 +65,6 @@ export function useBoards() {
     removeCategory,
     addWord,
     removeWord,
+    replaceBoards,
   };
 }

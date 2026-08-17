@@ -31,7 +31,9 @@ export function loadBoards() {
 
 export function saveBoards(boards) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  try {
+    window.localStorage.setItem(BOARDS_KEY, JSON.stringify(boards));
+  } catch {}
 }
 
 export function loadActiveBoardId(boards) {
@@ -42,7 +44,9 @@ export function loadActiveBoardId(boards) {
 
 export function saveActiveBoardId(id) {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(ACTIVE_BOARD_KEY, id);
+  try {
+    window.localStorage.setItem(ACTIVE_BOARD_KEY, id);
+  } catch {}
 }
 
 export function renameBoard(boards, boardId, name) {
