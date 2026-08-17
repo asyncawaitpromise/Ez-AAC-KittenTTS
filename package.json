@@ -25,12 +25,5 @@
   "devDependencies": {
     "@vite-pwa/astro": "^1.2.0",
     "daisyui": "^4.12.23"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "protobufjs",
-      "sharp"
-    ]
   }
 }
