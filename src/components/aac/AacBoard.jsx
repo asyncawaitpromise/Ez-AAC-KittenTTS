@@ -47,7 +47,7 @@ const LoadGate = ({ status, progress, error, onLoad }) => (
 );
 
 const AacBoard = () => {
-  const { status, progress, error, speakingId, load, speak } = useTts();
+  const { status, progress, error, synthesizingVoice, speakingVoice, load, speak } = useTts();
   const { voice, speed, setSpeed } = useSettings();
   const boardsApi = useBoards();
   const { activeBoard } = boardsApi;
@@ -99,7 +99,7 @@ const AacBoard = () => {
         onSpeak={speakSentence}
         onBackspace={() => setSentence((s) => s.slice(0, -1))}
         onClear={() => setSentence([])}
-        speaking={speakingId !== null}
+        speaking={synthesizingVoice !== null || speakingVoice !== null}
       />
 
       <div className="flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="Word categories">

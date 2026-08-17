@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { ArrowLeft, Check, Download, Play, Square } from 'lucide-react';
+import { ArrowLeft, Check, Download, Loader2, Play, Square } from 'lucide-react';
 import { useTts } from '../../lib/tts/useTts';
 import { useSettings } from '../../lib/aac/useSettings';
 import { VOICES } from '../../lib/aac/vocabulary';
@@ -12,7 +12,7 @@ function formatBytes(n) {
 }
 
 const VoicePicker = () => {
-  const { status, progress, error, speakingId, load, speak, stop } = useTts();
+  const { status, progress, error, synthesizingVoice, speakingVoice, load, speak, stop } = useTts();
   const { voice, setVoice } = useSettings();
 
   useEffect(() => {
@@ -58,7 +58,9 @@ const VoicePicker = () => {
         <div className="grid gap-2 sm:grid-cols-2">
           {VOICES.map((v) => {
             const selected = voice === v.id;
-            const playing = speakingId !== null;
+            const synthesizing = synthesizingVoice === v.id;
+            const playing = speakingVoice === v.id;
+            const busy = synthesizing || playing;
             return (
               <div
                 key={v.id}
@@ -70,11 +72,23 @@ const VoicePicker = () => {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => (playing ? stop() : speak(demoLine(v.label), { voice: v.id, speed: 1 }))}
-                    aria-label={`Play demo for ${v.label}`}
+                    onClick={() => (busy ? stop() : speak(demoLine(v.label), { voice: v.id, speed: 1 }))}
+                    aria-label={
+                      synthesizing
+                        ? `Preparing demo for ${v.label}`
+                        : playing
+                          ? `Stop demo for ${v.label}`
+                          : `Play demo for ${v.label}`
+                    }
                     className="btn btn-square btn-sm"
                   >
-                    {playing ? <Square size={16} /> : <Play size={16} />}
+                    {synthesizing ? (
+                      <Loader2 size={16} className="animate-spin" />
+                    ) : playing ? (
+                      <Square size={16} />
+                    ) : (
+                      <Play size={16} />
+                    )}
                   </button>
                   <button
                     type="button"

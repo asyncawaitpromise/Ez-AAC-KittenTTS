@@ -10,12 +10,18 @@ export function useTts() {
   const [progress, setProgress] = useState(null);
   const [voices, setVoices] = useState([]);
   const [error, setError] = useState(null);
-  const [speakingId, setSpeakingId] = useState(null);
+  // Keyed by voice id (not a request counter) so callers can tell which
+  // specific voice is mid-synthesis vs. actually playing audio.
+  const [synthesizingVoice, setSynthesizingVoice] = useState(null);
+  const [speakingVoice, setSpeakingVoice] = useState(null);
 
   const workerRef = useRef(null);
   const audioCtxRef = useRef(null);
   const sourceRef = useRef(null);
   const pendingRef = useRef(new Map());
+  // requestId of the in-flight/playing speak() call; lets stale responses
+  // from a superseded request (e.g. user hit Play on another voice) no-op.
+  const activeRequestRef = useRef(null);
 
   const getWorker = useCallback(() => {
     if (!workerRef.current) {
@@ -65,9 +71,11 @@ export function useTts() {
   }, []);
 
   const stop = useCallback(() => {
+    activeRequestRef.current = null;
     sourceRef.current?.stop();
     sourceRef.current = null;
-    setSpeakingId(null);
+    setSynthesizingVoice(null);
+    setSpeakingVoice(null);
   }, []);
 
   const speak = useCallback(
@@ -75,29 +83,49 @@ export function useTts() {
       if (status !== 'ready' || !text.trim()) return;
       const requestId = ++requestCounter;
       stop();
-      setSpeakingId(requestId);
+      activeRequestRef.current = requestId;
+      setSynthesizingVoice(voice);
 
-      const { audio, sampleRate } = await new Promise((resolve, reject) => {
-        pendingRef.current.set(requestId, { resolve, reject });
-        getWorker().postMessage({ type: 'speak', requestId, text, voice, speed });
-      });
+      try {
+        const { audio, sampleRate } = await new Promise((resolve, reject) => {
+          pendingRef.current.set(requestId, { resolve, reject });
+          getWorker().postMessage({ type: 'speak', requestId, text, voice, speed });
+        });
 
-      const pcm = new Float32Array(audio);
-      const ctx = getAudioContext();
-      const buffer = ctx.createBuffer(1, pcm.length, sampleRate);
-      buffer.copyToChannel(pcm, 0);
+        // A newer speak() call (or stop()) superseded this one while it was
+        // synthesizing — drop the now-stale result instead of playing it.
+        if (activeRequestRef.current !== requestId) return;
 
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.connect(ctx.destination);
-      source.onended = () => setSpeakingId((current) => (current === requestId ? null : current));
-      sourceRef.current = source;
-      source.start();
+        const pcm = new Float32Array(audio);
+        const ctx = getAudioContext();
+        const buffer = ctx.createBuffer(1, pcm.length, sampleRate);
+        buffer.copyToChannel(pcm, 0);
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.onended = () => {
+          if (activeRequestRef.current === requestId) {
+            activeRequestRef.current = null;
+            setSpeakingVoice(null);
+          }
+        };
+        sourceRef.current = source;
+        setSynthesizingVoice(null);
+        setSpeakingVoice(voice);
+        source.start();
+      } catch (err) {
+        if (activeRequestRef.current === requestId) {
+          activeRequestRef.current = null;
+          setSynthesizingVoice(null);
+        }
+        throw err;
+      }
     },
     [status, getWorker, getAudioContext, stop]
   );
 
   useEffect(() => () => workerRef.current?.terminate(), []);
 
-  return { status, progress, voices, error, speakingId, load, speak, stop };
+  return { status, progress, voices, error, synthesizingVoice, speakingVoice, load, speak, stop };
 }
