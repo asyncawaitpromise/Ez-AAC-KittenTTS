@@ -131,7 +131,8 @@ const AacBoard = () => {
         onSpeak={speakSentence}
         onBackspace={() => setSentence((s) => s.slice(0, -1))}
         onClear={() => setSentence([])}
-        speaking={synthesizingVoice !== null || speakingVoice !== null}
+        synthesizing={synthesizingVoice !== null}
+        speaking={speakingVoice !== null}
       />
 
       {mode === 'board' && (
