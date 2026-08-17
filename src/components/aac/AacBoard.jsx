@@ -62,7 +62,7 @@ const LoadGate = ({ status, progress, error, onLoad }) => (
 );
 
 const AacBoard = () => {
-  const { status, progress, error, synthesizingVoice, speakingVoice, load, speak } = useTts();
+  const { status, progress, error, synthesizingVoice, speakingVoice, load, loadIfCached, speak } = useTts();
   const { voice, speed, setSpeed, speakOnTap, setSpeakOnTap } = useSettings();
   const boardsApi = useBoards();
   const { activeBoard } = boardsApi;
@@ -74,12 +74,12 @@ const AacBoard = () => {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mode, setMode] = useState('board');
 
-  // Auto-start the engine on mount — if the model is already cached this
-  // resolves almost instantly, so there's no reason to make the user tap
-  // "Load speech engine" every time they open the app.
+  // Auto-start the engine on mount only if the model is already cached — if
+  // it is, this resolves almost instantly; if not, we wait for the user to tap
+  // "Load speech engine" rather than downloading ~80MB unprompted.
   useEffect(() => {
-    load();
-  }, [load]);
+    loadIfCached();
+  }, [loadIfCached]);
 
   // Jump to the new board's first goal whenever the active board changes
   // (switching boards, or the very first board load).

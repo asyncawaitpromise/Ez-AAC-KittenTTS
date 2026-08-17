@@ -6,11 +6,10 @@
 //
 // Model card: https://huggingface.co/onnx-community/KittenTTS-Mini-v0.8-ONNX
 // Base model: https://huggingface.co/KittenML/kitten-tts-mini-0.8 (StyleTTS 2, 80M params)
-import { cachedFetchWithProgress } from './cache.js';
+import { cachedFetchWithProgress, MODEL_BASE_URL } from './cache.js';
 import { loadVoiceEmbeddings } from './npz.js';
 import { chunkText, textToTokenIds } from './tokenizer.js';
 
-const MODEL_BASE_URL = 'https://huggingface.co/onnx-community/KittenTTS-Mini-v0.8-ONNX/resolve/main';
 const SAMPLE_RATE = 24000;
 
 export class KittenTtsEngine {

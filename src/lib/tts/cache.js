@@ -5,6 +5,20 @@
 // service worker already relies on for the same offline guarantee.
 const CACHE_NAME = 'kitten-tts-assets-v1';
 
+export const MODEL_BASE_URL =
+  'https://huggingface.co/onnx-community/KittenTTS-Mini-v0.8-ONNX/resolve/main';
+
+// Every asset the engine downloads before it can speak. Used to tell whether
+// the model is already on-device so first launch can avoid downloading the
+// ~80MB model without an explicit tap.
+const TTS_ASSET_PATHS = ['kitten_config.json', 'onnx/model.onnx', 'voices.npz'];
+
+export async function isTtsCached() {
+  const cache = await caches.open(CACHE_NAME);
+  const urls = new Set((await cache.keys()).map((r) => r.url));
+  return TTS_ASSET_PATHS.every((p) => urls.has(`${MODEL_BASE_URL}/${p}`));
+}
+
 export async function cachedFetchWithProgress(url, onProgress) {
   const cache = await caches.open(CACHE_NAME);
   const cached = await cache.match(url);

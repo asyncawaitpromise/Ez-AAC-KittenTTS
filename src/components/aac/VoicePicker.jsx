@@ -12,12 +12,12 @@ function formatBytes(n) {
 }
 
 const VoicePicker = () => {
-  const { status, progress, error, synthesizingVoice, speakingVoice, load, speak, stop } = useTts();
+  const { status, progress, error, synthesizingVoice, speakingVoice, load, loadIfCached, speak, stop } = useTts();
   const { voice, setVoice } = useSettings();
 
   useEffect(() => {
-    load();
-  }, [load]);
+    loadIfCached();
+  }, [loadIfCached]);
 
   return (
     <div className="flex h-svh flex-col gap-3 overflow-y-auto p-4">

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isTtsCached } from './cache.js';
 
 let requestCounter = 0;
 
@@ -61,6 +62,13 @@ export function useTts() {
     setError(null);
     getWorker().postMessage({ type: 'load' });
   }, [getWorker, status]);
+
+  // Only kick off the (potentially large) download when the model is already
+  // on-device. Otherwise leave status as 'idle' so the UI shows the explicit
+  // "Load speech engine" button instead of downloading unprompted.
+  const loadIfCached = useCallback(async () => {
+    if (await isTtsCached()) load();
+  }, [load]);
 
   const getAudioContext = useCallback(() => {
     if (!audioCtxRef.current) {
@@ -127,5 +135,5 @@ export function useTts() {
 
   useEffect(() => () => workerRef.current?.terminate(), []);
 
-  return { status, progress, voices, error, synthesizingVoice, speakingVoice, load, speak, stop };
+  return { status, progress, voices, error, synthesizingVoice, speakingVoice, load, loadIfCached, speak, stop };
 }
