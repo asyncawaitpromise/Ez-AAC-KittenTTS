@@ -14,11 +14,21 @@ const KeyboardView = ({ onAddText }) => {
     setText('');
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      if (!text.trim()) return;
+      onAddText(text.trim());
+      setText('');
+    }
+  };
+
   return (
     <form onSubmit={submit} className="flex flex-1 flex-col gap-2">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
+        onKeyDown={handleKeyDown}
         placeholder="Type anything to add it to your sentence…"
         className="textarea textarea-bordered flex-1 resize-none text-lg"
         autoFocus
