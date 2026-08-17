@@ -1,12 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Settings, Download } from 'lucide-react';
+import { Settings, Download, LayoutGrid, Keyboard, MessagesSquare } from 'lucide-react';
 import { useTts } from '../../lib/tts/useTts';
 import { useSettings } from '../../lib/aac/useSettings';
 import { useBoards } from '../../lib/aac/useBoards';
+import { usePhrases } from '../../lib/aac/usePhrases';
 import { CATEGORY_COLOR_CLASSES } from '../../lib/aac/vocabulary';
 import Tile from './Tile';
 import SentenceBar from './SentenceBar';
 import SettingsPanel from './SettingsPanel';
+import KeyboardView from './KeyboardView';
+import PhrasesView from './PhrasesView';
+
+const MODES = [
+  { id: 'board', label: 'Board', icon: LayoutGrid },
+  { id: 'keyboard', label: 'Type', icon: Keyboard },
+  { id: 'phrases', label: 'Phrases', icon: MessagesSquare },
+];
 
 function formatBytes(n) {
   if (!n) return '';
@@ -51,10 +60,12 @@ const AacBoard = () => {
   const { voice, speed, setSpeed } = useSettings();
   const boardsApi = useBoards();
   const { activeBoard } = boardsApi;
+  const { phrases, addPhrase, removePhrase } = usePhrases();
 
   const [sentence, setSentence] = useState([]);
   const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [mode, setMode] = useState('board');
 
   // Jump to the new board's first goal whenever the active board changes
   // (switching boards, or the very first board load).
@@ -68,12 +79,13 @@ const AacBoard = () => {
 
   const category = activeBoard.categories.find((c) => c.id === activeCategoryId);
 
-  const addWord = (word) => {
-    // KittenTTS reads tone/prosody across a whole sentence, so speech only
-    // ever happens once on the full sentence (via the Speak button below) —
-    // never per-tile, which would produce disconnected, flat-sounding words.
-    setSentence((s) => [...s, word]);
-  };
+  // KittenTTS reads tone/prosody across a whole sentence, so speech only ever
+  // happens once on the full sentence (via the Speak button below) — never
+  // per-chip. Board tiles, typed text, and saved phrases all funnel into the
+  // same sentence array so they can be freely combined before speaking.
+  const addWord = (word) => setSentence((s) => [...s, word]);
+  const addText = (text) => setSentence((s) => [...s, { id: `typed-${Date.now()}`, label: text }]);
+  const addPhraseToSentence = (phrase) => setSentence((s) => [...s, { id: phrase.id, label: phrase.text }]);
 
   const speakSentence = () => {
     const text = sentence.map((w) => w.label).join(' ');
@@ -82,8 +94,21 @@ const AacBoard = () => {
 
   return (
     <div className="flex h-svh flex-col gap-2 p-2">
-      <div className="flex items-center justify-between px-1">
-        <h1 className="text-lg font-bold">Ez AAC</h1>
+      <div className="flex items-center gap-1 px-1">
+        <div className="join flex-1" role="tablist" aria-label="Input mode">
+          {MODES.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={mode === id}
+              onClick={() => setMode(id)}
+              className={`join-item btn btn-sm flex-1 gap-1 ${mode === id ? 'btn-primary' : 'btn-ghost'}`}
+            >
+              <Icon size={16} /> {label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
@@ -102,33 +127,48 @@ const AacBoard = () => {
         speaking={synthesizingVoice !== null || speakingVoice !== null}
       />
 
-      <div className="flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="Word categories">
-        {activeBoard.categories.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            role="tab"
-            aria-selected={c.id === activeCategoryId}
-            onClick={() => setActiveCategoryId(c.id)}
-            className={`shrink-0 rounded-full border-2 px-3 py-1 text-sm font-semibold ${
-              c.id === activeCategoryId ? CATEGORY_COLOR_CLASSES[c.color] : 'border-base-300 bg-base-100'
-            }`}
-          >
-            {c.label}
-          </button>
-        ))}
-      </div>
+      {mode === 'board' && (
+        <>
+          <div className="flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="Word categories">
+            {activeBoard.categories.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                role="tab"
+                aria-selected={c.id === activeCategoryId}
+                onClick={() => setActiveCategoryId(c.id)}
+                className={`shrink-0 rounded-full border-2 px-3 py-1 text-sm font-semibold ${
+                  c.id === activeCategoryId ? CATEGORY_COLOR_CLASSES[c.color] : 'border-base-300 bg-base-100'
+                }`}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
 
-      <div className="grid flex-1 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
-        {!category && (
-          <p className="col-span-full self-start text-base-content/50">
-            This board has no goals yet — open Settings to add some.
-          </p>
-        )}
-        {category?.words.map((word) => (
-          <Tile key={word.id} word={word} color={category.color} onPress={addWord} />
-        ))}
-      </div>
+          <div className="grid flex-1 content-start grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
+            {!category && (
+              <p className="col-span-full self-start text-base-content/50">
+                This board has no goals yet — open Settings to add some.
+              </p>
+            )}
+            {category?.words.map((word) => (
+              <Tile key={word.id} word={word} color={category.color} onPress={addWord} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {mode === 'keyboard' && <KeyboardView onAddText={addText} />}
+
+      {mode === 'phrases' && (
+        <PhrasesView
+          phrases={phrases}
+          onAddPhrase={addPhrase}
+          onRemovePhrase={removePhrase}
+          onUsePhrase={addPhraseToSentence}
+        />
+      )}
 
       <SettingsPanel
         open={settingsOpen}
