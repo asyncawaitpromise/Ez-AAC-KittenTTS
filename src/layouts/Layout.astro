@@ -32,6 +32,10 @@ if (Boolean(emoji) === false) emoji = "🔥";
   body {
     margin: 0;
     width: 100%;
-    height: 100%;
+    /* svh (small viewport height) excludes the mobile browser chrome that
+       dvh/vh include-then-hide, so the board doesn't jump or scroll when
+       the address bar shows/collapses. */
+    height: 100svh;
+    overflow: hidden;
   }
 </style>

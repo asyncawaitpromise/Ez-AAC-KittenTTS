@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Settings, Download } from 'lucide-react';
 import { useTts } from '../../lib/tts/useTts';
-import { CATEGORIES, CATEGORY_COLOR_CLASSES } from '../../lib/aac/vocabulary';
+import { useSettings } from '../../lib/aac/useSettings';
+import { useBoards } from '../../lib/aac/useBoards';
+import { CATEGORY_COLOR_CLASSES } from '../../lib/aac/vocabulary';
 import Tile from './Tile';
 import SentenceBar from './SentenceBar';
-import VoiceSettings from './VoiceSettings';
+import SettingsPanel from './SettingsPanel';
 
 function formatBytes(n) {
   if (!n) return '';
@@ -12,7 +14,7 @@ function formatBytes(n) {
 }
 
 const LoadGate = ({ status, progress, error, onLoad }) => (
-  <div className="flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center">
+  <div className="flex h-svh flex-col items-center justify-center gap-4 p-6 text-center">
     <h1 className="text-2xl font-bold">Ez AAC · KittenTTS</h1>
     <p className="max-w-xs text-base-content/70">
       This board speaks entirely on your device — nothing you type or tap ever leaves it. The first
@@ -45,22 +47,32 @@ const LoadGate = ({ status, progress, error, onLoad }) => (
 );
 
 const AacBoard = () => {
-  const { status, progress, voices, error, speakingId, load, speak } = useTts();
+  const { status, progress, error, speakingId, load, speak } = useTts();
+  const { voice, speed, setSpeed } = useSettings();
+  const boardsApi = useBoards();
+  const { activeBoard } = boardsApi;
+
   const [sentence, setSentence] = useState([]);
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
+  const [activeCategoryId, setActiveCategoryId] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [voice, setVoice] = useState('Bella');
-  const [speed, setSpeed] = useState(1);
+
+  // Jump to the new board's first goal whenever the active board changes
+  // (switching boards, or the very first board load).
+  useEffect(() => {
+    setActiveCategoryId(activeBoard.categories[0]?.id ?? null);
+  }, [activeBoard.id]);
 
   if (status !== 'ready') {
     return <LoadGate status={status} progress={progress} error={error} onLoad={load} />;
   }
 
-  const category = CATEGORIES.find((c) => c.id === activeCategory) ?? CATEGORIES[0];
+  const category = activeBoard.categories.find((c) => c.id === activeCategoryId);
 
   const addWord = (word) => {
+    // KittenTTS reads tone/prosody across a whole sentence, so speech only
+    // ever happens once on the full sentence (via the Speak button below) —
+    // never per-tile, which would produce disconnected, flat-sounding words.
     setSentence((s) => [...s, word]);
-    speak(word.label, { voice, speed });
   };
 
   const speakSentence = () => {
@@ -69,13 +81,13 @@ const AacBoard = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col gap-2 p-2">
+    <div className="flex h-svh flex-col gap-2 p-2">
       <div className="flex items-center justify-between px-1">
         <h1 className="text-lg font-bold">Ez AAC</h1>
         <button
           type="button"
           onClick={() => setSettingsOpen(true)}
-          aria-label="Voice settings"
+          aria-label="Settings"
           className="btn btn-square btn-ghost btn-sm"
         >
           <Settings size={20} />
@@ -91,15 +103,15 @@ const AacBoard = () => {
       />
 
       <div className="flex gap-1 overflow-x-auto pb-1" role="tablist" aria-label="Word categories">
-        {CATEGORIES.map((c) => (
+        {activeBoard.categories.map((c) => (
           <button
             key={c.id}
             type="button"
             role="tab"
-            aria-selected={c.id === activeCategory}
-            onClick={() => setActiveCategory(c.id)}
+            aria-selected={c.id === activeCategoryId}
+            onClick={() => setActiveCategoryId(c.id)}
             className={`shrink-0 rounded-full border-2 px-3 py-1 text-sm font-semibold ${
-              c.id === activeCategory ? CATEGORY_COLOR_CLASSES[c.color] : 'border-base-300 bg-base-100'
+              c.id === activeCategoryId ? CATEGORY_COLOR_CLASSES[c.color] : 'border-base-300 bg-base-100'
             }`}
           >
             {c.label}
@@ -108,24 +120,23 @@ const AacBoard = () => {
       </div>
 
       <div className="grid flex-1 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-4">
-        {category.words.map((word) => (
-          <Tile
-            key={word.id}
-            word={word}
-            color={word.category ? CATEGORIES.find((c) => c.id === word.category)?.color ?? category.color : category.color}
-            onPress={addWord}
-          />
+        {!category && (
+          <p className="col-span-full self-start text-base-content/50">
+            This board has no goals yet — open Settings to add some.
+          </p>
+        )}
+        {category?.words.map((word) => (
+          <Tile key={word.id} word={word} color={category.color} onPress={addWord} />
         ))}
       </div>
 
-      <VoiceSettings
+      <SettingsPanel
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         voice={voice}
-        onVoiceChange={setVoice}
         speed={speed}
         onSpeedChange={setSpeed}
-        availableVoices={voices}
+        boardsApi={boardsApi}
       />
     </div>
   );

@@ -1,8 +1,9 @@
-// Starter core-word board. Categories follow the Fitzgerald Key color
-// convention widely used in AAC (Unity, LAMP, PODD, etc.) so the color itself
-// carries meaning for the learner, not just the label: yellow = pronouns,
-// green = verbs, blue = descriptors, orange = nouns, pink = social,
-// purple = questions, red = negation.
+// Seed categories for the default board (src/lib/aac/boards.js). Follows the
+// Fitzgerald Key color convention widely used in AAC (Unity, LAMP, PODD,
+// etc.) so the color itself carries meaning for the learner, not just the
+// label: yellow = pronouns, green = verbs, blue = descriptors, orange =
+// nouns, pink = social, purple = questions. "red" is left free for
+// user-created categories (e.g. a "stop/danger" goal board).
 export const CATEGORIES = [
   {
     id: 'social',
@@ -15,7 +16,7 @@ export const CATEGORIES = [
       { id: 'thank-you', label: 'thank you', emoji: '🙏' },
       { id: 'sorry', label: 'sorry', emoji: '😔' },
       { id: 'yes', label: 'yes', emoji: '✅' },
-      { id: 'no', label: 'no', emoji: '❌', category: 'negation' },
+      { id: 'no', label: 'no', emoji: '❌' },
       { id: 'help', label: 'help', emoji: '🆘' },
     ],
   },
